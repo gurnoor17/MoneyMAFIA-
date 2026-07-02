@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { api } from '../services/api';
-import TransactionTable from '../components/TransactionTable';
-import TransactionModal from '../components/TransactionModal';
+import { api } from '../../services/api';
+import TransactionTable from '../../components/transactions/TransactionTable';
+import TransactionModal from '../../components/transactions/TransactionModal';
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState([]);

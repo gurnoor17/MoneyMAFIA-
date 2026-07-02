@@ -1,20 +1,12 @@
 import React from 'react';
 import { 
   ArrowUpDown, 
-  ChevronLeft, 
-  ChevronRight, 
   Edit2, 
   Trash2, 
-  Search, 
-  Calendar,
-  Filter,
-  Download,
-  RefreshCw
+  Calendar
 } from 'lucide-react';
-
-const CATEGORIES = [
-  'Food', 'Travel', 'Shopping', 'Bills', 'Health', 'Education', 'Entertainment', 'Salary', 'Freelance', 'Investment', 'Business', 'Others'
-];
+import TransactionTableFilters from './TransactionTableFilters';
+import TransactionTablePagination from './TransactionTablePagination';
 
 export default function TransactionTable({
   transactions = [],
@@ -29,10 +21,6 @@ export default function TransactionTable({
 }) {
   const { total, pages, currentPage } = pagination;
 
-  const handleParamChange = (key, value) => {
-    onParamsChange({ ...params, [key]: value });
-  };
-
   const handleSort = (field) => {
     const isSameField = params.sortBy === field;
     const newOrder = isSameField && params.sortOrder === 'DESC' ? 'ASC' : 'DESC';
@@ -43,125 +31,16 @@ export default function TransactionTable({
     });
   };
 
-  const clearFilters = () => {
-    onParamsChange({
-      search: '',
-      type: '',
-      category: '',
-      startDate: '',
-      endDate: '',
-      sortBy: 'transaction_date',
-      sortOrder: 'DESC'
-    });
-  };
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
       {/* Search, Filter, Export Bar */}
       {showFilters && (
-        <div 
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '16px',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', flexGrow: 1 }}>
-            {/* Search Input */}
-            <div style={{ position: 'relative', minWidth: '200px', flexGrow: 1, maxWidth: '300px' }}>
-              <Search 
-                size={16} 
-                style={{ 
-                  position: 'absolute', 
-                  left: '12px', 
-                  top: '50%', 
-                  transform: 'translateY(-50%)', 
-                  color: 'var(--text-muted)' 
-                }} 
-              />
-              <input
-                type="text"
-                placeholder="Search description..."
-                className="input-control"
-                value={params.search || ''}
-                onChange={(e) => handleParamChange('search', e.target.value)}
-                style={{ paddingLeft: '36px', height: '42px' }}
-              />
-            </div>
-
-            {/* Type Selector */}
-            <div style={{ minWidth: '130px' }}>
-              <select
-                className="input-control"
-                value={params.type || ''}
-                onChange={(e) => handleParamChange('type', e.target.value)}
-                style={{ height: '42px' }}
-              >
-                <option value="">All Types</option>
-                <option value="income">Income</option>
-                <option value="expense">Expense</option>
-              </select>
-            </div>
-
-            {/* Category Selector */}
-            <div style={{ minWidth: '140px' }}>
-              <select
-                className="input-control"
-                value={params.category || ''}
-                onChange={(e) => handleParamChange('category', e.target.value)}
-                style={{ height: '42px' }}
-              >
-                <option value="">All Categories</option>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-
-            {/* Start Date */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>From</span>
-              <input
-                type="date"
-                className="input-control"
-                value={params.startDate || ''}
-                onChange={(e) => handleParamChange('startDate', e.target.value)}
-                style={{ height: '42px', padding: '8px 12px' }}
-              />
-            </div>
-
-            {/* End Date */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>To</span>
-              <input
-                type="date"
-                className="input-control"
-                value={params.endDate || ''}
-                onChange={(e) => handleParamChange('endDate', e.target.value)}
-                style={{ height: '42px', padding: '8px 12px' }}
-              />
-            </div>
-
-            <button 
-              className="btn btn-outline" 
-              onClick={clearFilters}
-              style={{ padding: '8px 14px', height: '42px' }}
-              title="Reset Filters"
-            >
-              <RefreshCw size={14} />
-            </button>
-          </div>
-
-          <button 
-            className="btn btn-success" 
-            onClick={onExport}
-            style={{ height: '42px', padding: '8px 16px' }}
-          >
-            <Download size={16} />
-            <span>Export CSV</span>
-          </button>
-        </div>
+        <TransactionTableFilters
+          params={params}
+          onParamsChange={onParamsChange}
+          onExport={onExport}
+        />
       )}
 
       {/* Main Table */}
@@ -306,40 +185,14 @@ export default function TransactionTable({
       </div>
 
       {/* Pagination Controls */}
+      {/* Pagination Controls */}
       {pages > 1 && (
-        <div 
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: '8px'
-          }}
-        >
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Showing page <strong>{currentPage}</strong> of <strong>{pages}</strong> ({total} entries total)
-          </span>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              className="btn btn-outline"
-              disabled={currentPage === 1}
-              onClick={() => onPageChange(currentPage - 1)}
-              style={{ padding: '8px 12px' }}
-            >
-              <ChevronLeft size={16} />
-              <span>Prev</span>
-            </button>
-            <button
-              className="btn btn-outline"
-              disabled={currentPage === pages}
-              onClick={() => onPageChange(currentPage + 1)}
-              style={{ padding: '8px 12px' }}
-            >
-              <span>Next</span>
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <TransactionTablePagination
+          currentPage={currentPage}
+          pages={pages}
+          total={total}
+          onPageChange={onPageChange}
+        />
       )}
     </div>
   );

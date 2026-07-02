@@ -1,4 +1,4 @@
-const db = require('./config/db');
+const db = require('./database/db');
 
 async function runTest() {
   const PORT = 5050;

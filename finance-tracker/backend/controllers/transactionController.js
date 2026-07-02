@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const db = require('../database/db');
 
 // Helper to calculate next occurrence date
 function calculateNextOccurrence(dateStr, period) {

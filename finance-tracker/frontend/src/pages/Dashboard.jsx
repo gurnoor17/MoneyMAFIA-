@@ -1,30 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Wallet, 
-  PiggyBank, 
-  Lightbulb, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  PiggyBank,
+  Lightbulb,
   AlertTriangle,
   Plus,
   ArrowRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api';
-import { 
-  ResponsiveContainer, 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend 
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend
 } from 'recharts';
 import TransactionTable from '../components/TransactionTable';
 import TransactionModal from '../components/TransactionModal';
@@ -101,18 +101,32 @@ export default function Dashboard() {
     setIsModalOpen(true);
   };
 
+  console.log("Summary:", summary);
+  console.log("Balance:", summary?.totals?.balance);
+  console.log("Transaction:", data);
+
   const handleSaveTransaction = async (data) => {
+    // Prevent expense from making balance negative
+    if (
+      data.type === "expense" &&
+      !editingTransaction &&
+      data.amount > summary.totals.balance
+    ) {
+      alert("❌ Insufficient Balance! Expense cannot exceed your available balance.");
+      return;
+    }
+
     try {
       if (editingTransaction) {
         await api.transactions.update(editingTransaction.id, data);
       } else {
         await api.transactions.add(data);
       }
+
       setIsModalOpen(false);
-      // Reload everything
       loadDashboardData();
     } catch (err) {
-      alert(err.message || 'Error saving transaction');
+      alert(err.message || "Error saving transaction");
     }
   };
 
@@ -139,11 +153,11 @@ export default function Dashboard() {
   }
 
   // Formatting chart tooltips
-  const formatCurrency = (val) => `$${parseFloat(val).toFixed(2)}`;
+  const formatCurrency = (val) => `$₹{parseFloat(val).toFixed(2)}`;
 
   return (
     <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      
+
       {/* Header section */}
       <div className="page-header">
         <div>
@@ -218,7 +232,7 @@ export default function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                     <XAxis dataKey="month" stroke="var(--text-secondary)" />
                     <YAxis stroke="var(--text-secondary)" tickFormatter={formatCurrency} />
-                    <Tooltip 
+                    <Tooltip
                       formatter={formatCurrency}
                       contentStyle={{
                         backgroundColor: 'var(--bg-surface)',
@@ -228,12 +242,12 @@ export default function Dashboard() {
                       }}
                     />
                     <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="amount" 
-                      name="Expenses" 
-                      stroke="var(--primary)" 
-                      strokeWidth={3} 
+                    <Line
+                      type="monotone"
+                      dataKey="amount"
+                      name="Expenses"
+                      stroke="var(--primary)"
+                      strokeWidth={3}
                       activeDot={{ r: 8 }}
                       dot={{ strokeWidth: 2, r: 4 }}
                     />
@@ -272,13 +286,13 @@ export default function Dashboard() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Recent Activity</h3>
-          <Link 
-            to="/transactions" 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '6px', 
-              color: 'var(--primary)', 
+          <Link
+            to="/transactions"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: 'var(--primary)',
               fontSize: '0.9rem',
               fontWeight: 600
             }}

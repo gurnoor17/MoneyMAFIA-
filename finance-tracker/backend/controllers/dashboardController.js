@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const db = require('../database/db');
 
 // Helper to get current and previous month strings (YYYY-MM)
 function getMonths() {

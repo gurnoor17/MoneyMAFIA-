@@ -3,17 +3,17 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Pages
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Transactions from './pages/Transactions';
-import Budgets from './pages/Budgets';
-import Profile from './pages/Profile';
+import Login from './pages/Login/Login';
+import Register from './pages/Register/Register';
+import Dashboard from './pages/Dashboard/Dashboard';
+import Transactions from './pages/Transactions/Transactions';
+import Budgets from './pages/Budgets/Budgets';
+import Profile from './pages/Profile/Profile';
 
 // Layout Components
-import Sidebar from './components/Sidebar';
-import Navbar from './components/Navbar';
-import TransactionModal from './components/TransactionModal';
+import Sidebar from './components/layout/Sidebar';
+import Navbar from './components/layout/Navbar';
+import TransactionModal from './components/transactions/TransactionModal';
 import { api } from './services/api';
 
 // Protected Route Wrapper Component

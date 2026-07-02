@@ -1,37 +1,29 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { TrendingUp, Lock, Mail, User } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { TrendingUp, Lock, Mail } from 'lucide-react';
 
-export default function Register() {
-  const [name, setName] = useState('');
+export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { register } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password || !confirmPassword) {
-      return setError('Please enter all fields.');
+    if (!email || !password) {
+      return setError('Please enter both email and password.');
     }
-    if (password !== confirmPassword) {
-      return setError('Passwords do not match.');
-    }
-    if (password.length < 6) {
-      return setError('Password must be at least 6 characters long.');
-    }
-
     setError('');
     setSubmitting(true);
     try {
-      await register(name, email, password);
+      await login(email, password, rememberMe);
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.');
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setSubmitting(false);
     }
@@ -45,9 +37,9 @@ export default function Register() {
             <TrendingUp size={36} />
             <span>moneyMafia</span>
           </div>
-          <h2 style={{ fontSize: '1.4rem', marginTop: '10px' }}>Create Account</h2>
+          <h2 style={{ fontSize: '1.4rem', marginTop: '10px' }}>Welcome Back</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>
-            Sign up to track your budgets and transactions
+            Log in to manage your budgets and cash flows
           </p>
         </div>
 
@@ -58,32 +50,6 @@ export default function Register() {
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="name">Full Name</label>
-            <div style={{ position: 'relative' }}>
-              <User
-                size={18}
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--text-muted)'
-                }}
-              />
-              <input
-                id="name"
-                type="text"
-                className="input-control"
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                style={{ paddingLeft: '40px' }}
-                required
-              />
-            </div>
-          </div>
-
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
             <div style={{ position: 'relative' }}>
@@ -110,8 +76,8 @@ export default function Register() {
             </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password (min. 6 characters)</label>
+          <div className="form-group" style={{ marginBottom: '24px' }}>
+            <label htmlFor="password">Password</label>
             <div style={{ position: 'relative' }}>
               <Lock
                 size={18}
@@ -136,30 +102,17 @@ export default function Register() {
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '24px' }}>
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <div style={{ position: 'relative' }}>
-              <Lock
-                size={18}
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--text-muted)'
-                }}
-              />
-              <input
-                id="confirmPassword"
-                type="password"
-                className="input-control"
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                style={{ paddingLeft: '40px' }}
-                required
-              />
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+            <input
+              id="rememberMe"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+            />
+            <label htmlFor="rememberMe" style={{ margin: 0, fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              Remember Me
+            </label>
           </div>
 
           <button
@@ -168,14 +121,14 @@ export default function Register() {
             style={{ width: '100%', padding: '14px', borderRadius: 'var(--border-radius-sm)' }}
             disabled={submitting}
           >
-            {submitting ? 'Registering...' : 'Sign Up'}
+            {submitting ? 'Authenticating...' : 'Sign In'}
           </button>
         </form>
 
         <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-          Already have an account?{' '}
-          <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>
-            Sign In
+          Don't have an account?{' '}
+          <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 600 }}>
+            Create Account
           </Link>
         </div>
       </div>
