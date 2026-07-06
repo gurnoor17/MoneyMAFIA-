@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const db = require('../database/db');
+const db = require('../config/db');
 
 // @route   GET api/profile/summary
 // @desc    Get profile details and summarized statistics

@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+
+// Layouts
+import MainLayout from './layouts/MainLayout';
 
 // Pages
-import Login from './pages/Login/Login';
-import Register from './pages/Register/Register';
-import Dashboard from './pages/Dashboard/Dashboard';
-import Transactions from './pages/Transactions/Transactions';
-import Budgets from './pages/Budgets/Budgets';
-import Profile from './pages/Profile/Profile';
-
-// Layout Components
-import Sidebar from './components/layout/Sidebar';
-import Navbar from './components/layout/Navbar';
-import TransactionModal from './components/transactions/TransactionModal';
-import { api } from './services/api';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Transactions from './pages/Transactions';
+import Budgets from './pages/Budgets';
+import Profile from './pages/Profile';
+import Loans from './pages/Loans';
+import NotFound from './pages/NotFound';
 
 // Protected Route Wrapper Component
 const ProtectedRoute = ({ children }) => {
@@ -34,85 +34,7 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-// Layout wrapper for authenticated users
-const AppLayoutWrapper = ({ children, isDarkMode, setIsDarkMode }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
-  const toggleSidebar = () => {
-    setSidebarOpen(prev => !prev);
-  };
-
-  useEffect(() => {
-    const handleOpenGlobalModal = () => {
-      setIsAddModalOpen(true);
-    };
-    window.addEventListener('open-add-transaction-modal', handleOpenGlobalModal);
-    return () => {
-      window.removeEventListener('open-add-transaction-modal', handleOpenGlobalModal);
-    };
-  }, []);
-
-  const handleSaveTransaction = async (data) => {
-    try {
-      await api.transactions.add(data);
-      setIsAddModalOpen(false);
-      window.dispatchEvent(new CustomEvent('transaction-saved'));
-    } catch (err) {
-      alert(err.message || 'Error saving transaction');
-    }
-  };
-
-  return (
-    <div className="app-layout">
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-
-      {/* Main Container */}
-      <div className="main-content">
-        {/* Navbar */}
-        <Navbar
-          toggleSidebar={toggleSidebar}
-          isDarkMode={isDarkMode}
-          setIsDarkMode={setIsDarkMode}
-        />
-
-        {/* Page Inner Content */}
-        <div className="animate-fade">
-          {children}
-        </div>
-      </div>
-
-      {/* Global Add Transaction Modal */}
-      <TransactionModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSave={handleSaveTransaction}
-        transaction={null}
-      />
-    </div>
-  );
-};
-
 function AppContent() {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check local storage or default to system dark preference
-    const saved = localStorage.getItem('theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
-
-  // Apply dark mode theme class
-  useEffect(() => {
-    if (isDarkMode) {
-      document.body.classList.add('dark-theme');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.body.classList.remove('dark-theme');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
-
   return (
     <Router>
       <Routes>
@@ -125,9 +47,9 @@ function AppContent() {
           path="/"
           element={
             <ProtectedRoute>
-              <AppLayoutWrapper isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode}>
+              <MainLayout>
                 <Dashboard />
-              </AppLayoutWrapper>
+              </MainLayout>
             </ProtectedRoute>
           }
         />
@@ -135,9 +57,9 @@ function AppContent() {
           path="/transactions"
           element={
             <ProtectedRoute>
-              <AppLayoutWrapper isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode}>
+              <MainLayout>
                 <Transactions />
-              </AppLayoutWrapper>
+              </MainLayout>
             </ProtectedRoute>
           }
         />
@@ -145,9 +67,9 @@ function AppContent() {
           path="/budgets"
           element={
             <ProtectedRoute>
-              <AppLayoutWrapper isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode}>
+              <MainLayout>
                 <Budgets />
-              </AppLayoutWrapper>
+              </MainLayout>
             </ProtectedRoute>
           }
         />
@@ -155,15 +77,25 @@ function AppContent() {
           path="/profile"
           element={
             <ProtectedRoute>
-              <AppLayoutWrapper isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode}>
+              <MainLayout>
                 <Profile />
-              </AppLayoutWrapper>
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/loans"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Loans />
+              </MainLayout>
             </ProtectedRoute>
           }
         />
 
-        {/* Catch-all Redirect */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Catch-all Redirect / 404 */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );
@@ -172,7 +104,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

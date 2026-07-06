@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { api } from '../services/api';
+import authService from '../services/authService';
 
 const AuthContext = createContext(null);
 
@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       if (token) {
         try {
-          const userData = await api.auth.getMe();
+          const userData = await authService.getMe();
           setUser(userData);
         } catch (err) {
           console.error('Session restore failed:', err.message);
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password, rememberMe = true) => {
     setLoading(true);
     try {
-      const data = await api.auth.login(email, password);
+      const data = await authService.login(email, password);
       if (rememberMe) {
         localStorage.setItem('token', data.token);
       } else {
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password, rememberMe = true) => {
     setLoading(true);
     try {
-      const data = await api.auth.register(name, email, password);
+      const data = await authService.register(name, email, password);
       if (rememberMe) {
         localStorage.setItem('token', data.token);
       } else {

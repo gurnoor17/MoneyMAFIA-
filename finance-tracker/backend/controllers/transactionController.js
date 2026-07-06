@@ -1,132 +1,7 @@
-const db = require('../database/db');
-
-// Helper to calculate next occurrence date
-function calculateNextOccurrence(dateStr, period) {
-  const date = new Date(dateStr);
-  if (period === 'daily') {
-    date.setDate(date.getDate() + 1);
-  } else if (period === 'weekly') {
-    date.setDate(date.getDate() + 7);
-  } else if (period === 'monthly') {
-    date.setMonth(date.getMonth() + 1);
-  } else if (period === 'yearly') {
-    date.setFullYear(date.getFullYear() + 1);
-  }
-  return date.toISOString().split('T')[0];
-}
-
-// Process pending recurring transactions for a user
-const processRecurringTransactions = async (userId) => {
-  try {
-    const todayStr = new Date().toISOString().split('T')[0];
-    
-    // Select recurring templates where next_occurrence has passed or is today
-    const recurringResult = await db.query(
-      `SELECT * FROM transactions 
-       WHERE user_id = $1 AND is_recurring = true AND next_occurrence <= $2`,
-      [userId, todayStr]
-    );
-
-    for (const template of recurringResult.rows) {
-      let currentNext = new Date(template.next_occurrence);
-      const todayDate = new Date(todayStr);
-
-      while (currentNext <= todayDate) {
-        const occurrenceDateStr = currentNext.toISOString().split('T')[0];
-        
-        // 1. Insert the instance transaction (is_recurring = false)
-        await db.query(
-          `INSERT INTO transactions (user_id, title, amount, category, type, notes, transaction_date, is_recurring)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, false)`,
-          [userId, template.title, template.amount, template.category, template.type, template.notes, occurrenceDateStr]
-        );
-
-        // 2. Check and trigger budget warnings if this is an expense
-        if (template.type === 'expense') {
-          await checkBudgetAlerts(userId, template.category, occurrenceDateStr);
-        }
-
-        // 3. Advance to the next occurrence date
-        if (template.recurrence_period === 'daily') {
-          currentNext.setDate(currentNext.getDate() + 1);
-        } else if (template.recurrence_period === 'weekly') {
-          currentNext.setDate(currentNext.getDate() + 7);
-        } else if (template.recurrence_period === 'monthly') {
-          currentNext.setMonth(currentNext.getMonth() + 1);
-        } else if (template.recurrence_period === 'yearly') {
-          currentNext.setFullYear(currentNext.getFullYear() + 1);
-        }
-      }
-
-      // Update the template transaction's next_occurrence
-      await db.query(
-        'UPDATE transactions SET next_occurrence = $1 WHERE id = $2',
-        [currentNext.toISOString().split('T')[0], template.id]
-      );
-    }
-  } catch (err) {
-    console.error('Error in processRecurringTransactions:', err.message);
-  }
-};
-
-// Helper function to check and create notifications for budgets
-const checkBudgetAlerts = async (userId, category, dateStr) => {
-  try {
-    const month = dateStr.substring(0, 7); // YYYY-MM
-    
-    // Check if a budget exists for this category/month
-    const budgetResult = await db.query(
-      'SELECT limit_amount FROM budgets WHERE user_id = $1 AND category = $2 AND month = $3',
-      [userId, category, month]
-    );
-
-    if (budgetResult.rows.length === 0) return;
-    const limit = parseFloat(budgetResult.rows[0].limit_amount);
-
-    // Sum all expenses for this category/month
-    const expensesSumResult = await db.query(
-      `SELECT SUM(amount) as total FROM transactions 
-       WHERE user_id = $1 AND category = $2 AND type = 'expense' 
-         AND TO_CHAR(transaction_date, 'YYYY-MM') = $3`,
-      [userId, category, month]
-    );
-
-    const totalSpent = parseFloat(expensesSumResult.rows[0].total || 0);
-    const pct = totalSpent / limit;
-
-    if (pct >= 1.0) {
-      const message = `Budget Exceeded! You have spent $${totalSpent.toFixed(2)} of your $${limit.toFixed(2)} budget for ${category} in ${month}.`;
-      
-      // Check if duplicate alert exists
-      const existingAlert = await db.query(
-        'SELECT id FROM notifications WHERE user_id = $1 AND message = $2',
-        [userId, message]
-      );
-      if (existingAlert.rows.length === 0) {
-        await db.query(
-          'INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, $3)',
-          [userId, message, 'danger']
-        );
-      }
-    } else if (pct >= 0.8) {
-      const message = `Budget Alert! You have spent $${totalSpent.toFixed(2)} (over 80%) of your $${limit.toFixed(2)} budget for ${category} in ${month}.`;
-      
-      // Check if duplicate alert exists
-      const existingAlert = await db.query(
-        'SELECT id FROM notifications WHERE user_id = $1 AND message = $2',
-        [userId, message]
-      );
-      if (existingAlert.rows.length === 0) {
-        await db.query(
-          'INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, $3)',
-          [userId, message, 'warning']
-        );
-      }
-    }
-  } catch (err) {
-    console.error('Error checking budget alerts:', err.message);
-  }
-};
+const db = require('../config/db');
+const { processRecurringTransactions, checkBudgetAlerts } = require('../services/transactionService');
+const { generateCSV } = require('../utils/csvExport');
+const { calculateNextOccurrence } = require('../utils/recurringTransactions');
 
 // @route   GET api/transactions
 // @desc    Get transactions with filters, search, sorting, and pagination
@@ -226,23 +101,12 @@ exports.addTransaction = async (req, res) => {
   const userId = req.user.id;
   const { title, amount, category, type, notes, transaction_date, is_recurring, recurrence_period } = req.body;
 
-  if (!title || !amount || !category || !type || !transaction_date) {
-    return res.status(400).json({ message: 'Please enter all required fields' });
-  }
-
   const amtValue = parseFloat(amount);
-  if (isNaN(amtValue) || amtValue <= 0) {
-    return res.status(400).json({ message: 'Amount must be a positive number' });
-  }
 
   try {
     let nextOccurrence = null;
     const isRecur = !!is_recurring;
     if (isRecur) {
-      if (!recurrence_period) {
-        return res.status(400).json({ message: 'Recurrence period is required for recurring transactions' });
-      }
-      // Calculate first next occurrence
       nextOccurrence = calculateNextOccurrence(transaction_date, recurrence_period);
     }
 
@@ -276,14 +140,7 @@ exports.updateTransaction = async (req, res) => {
   const transactionId = req.params.id;
   const { title, amount, category, type, notes, transaction_date, is_recurring, recurrence_period } = req.body;
 
-  if (!title || !amount || !category || !type || !transaction_date) {
-    return res.status(400).json({ message: 'Please enter all required fields' });
-  }
-
   const amtValue = parseFloat(amount);
-  if (isNaN(amtValue) || amtValue <= 0) {
-    return res.status(400).json({ message: 'Amount must be a positive number' });
-  }
 
   try {
     // Check ownership
@@ -295,9 +152,6 @@ exports.updateTransaction = async (req, res) => {
     let nextOccurrence = null;
     const isRecur = !!is_recurring;
     if (isRecur) {
-      if (!recurrence_period) {
-        return res.status(400).json({ message: 'Recurrence period is required for recurring transactions' });
-      }
       nextOccurrence = calculateNextOccurrence(transaction_date, recurrence_period);
     }
 
@@ -397,24 +251,7 @@ exports.exportCSV = async (req, res) => {
 
     const dataResult = await db.query(queryText, params);
 
-    // Build CSV Content
-    let csvContent = 'Date,Title,Type,Category,Amount,Notes,Created At\n';
-    dataResult.rows.forEach((row) => {
-      // Escape strings containing commas/quotes
-      const esc = (val) => {
-        if (val === null || val === undefined) return '';
-        let str = String(val);
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-          return `"${str.replace(/"/g, '""')}"`;
-        }
-        return str;
-      };
-
-      const dateStr = new Date(row.transaction_date).toISOString().split('T')[0];
-      const createdStr = new Date(row.created_at).toISOString();
-
-      csvContent += `${dateStr},${esc(row.title)},${row.type},${esc(row.category)},${row.amount},${esc(row.notes)},${createdStr}\n`;
-    });
+    const csvContent = generateCSV(dataResult.rows);
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=transactions_report.csv');

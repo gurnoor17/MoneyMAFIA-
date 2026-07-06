@@ -162,7 +162,7 @@ export default function TransactionModal({ isOpen, onClose, onSave, transaction 
             }}
           >
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Amount ($)</label>
+              <label>Amount (₹)</label>
               <input 
                 type="number" 
                 step="0.01" 

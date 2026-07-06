@@ -1,0 +1,86 @@
+/* Color system design tokens */
+:root {
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  
+  /* Premium Navy & White Palette */
+  --bg-app: #f4f6fa;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --border-color: rgba(15, 43, 92, 0.08);
+  
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  
+  --primary: #0f2b5c;
+  --primary-hover: #0a1d3f;
+  --primary-light: rgba(15, 43, 92, 0.06);
+  --primary-gradient: linear-gradient(135deg, #0f2b5c 0%, #1e3a8a 100%);
+  
+  /* Sidebar Specific (Light Mode) */
+  --bg-sidebar: #0f2b5c;
+  --sidebar-text: #94a3b8;
+  --sidebar-active-text: #ffffff;
+  --sidebar-active-bg: rgba(255, 255, 255, 0.08);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  
+  --success: #10b981;
+  --success-light: rgba(16, 185, 129, 0.1);
+  --danger: #f43f5e;
+  --danger-light: rgba(244, 63, 94, 0.1);
+  --warning: #f59e0b;
+  --warning-light: rgba(245, 158, 11, 0.1);
+  --info: #0ea5e9;
+  --info-light: rgba(14, 165, 233, 0.1);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.08);
+  --glass-blur: blur(12px);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.4);
+  
+  --sidebar-width: 260px;
+  --header-height: 70px;
+  --border-radius-sm: 8px;
+  --border-radius-md: 16px;
+  --border-radius-lg: 24px;
+}
+
+/* Dark Mode Override */
+.dark-theme {
+  /* Premium Midnight Navy Theme */
+  --bg-app: #080c14;
+  --bg-surface: #0e1726;
+  --bg-card: #0e1726;
+  --border-color: rgba(255, 255, 255, 0.06);
+  
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  
+  --primary: #38bdf8;
+  --primary-hover: #7dd3fc;
+  --primary-light: rgba(56, 189, 248, 0.15);
+  --primary-gradient: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+  
+  /* Sidebar Specific (Dark Mode) */
+  --bg-sidebar: #090d16;
+  --sidebar-text: #94a3b8;
+  --sidebar-active-text: #38bdf8;
+  --sidebar-active-bg: rgba(56, 189, 248, 0.1);
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  
+  --success: #34d399;
+  --success-light: rgba(52, 211, 153, 0.15);
+  --danger: #fb7185;
+  --danger-light: rgba(251, 113, 133, 0.15);
+  --warning: #fbbf24;
+  --warning-light: rgba(251, 191, 36, 0.15);
+  --info: #38bdf8;
+  --info-light: rgba(56, 189, 248, 0.15);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+}

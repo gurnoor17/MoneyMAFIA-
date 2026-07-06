@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../database/db');
+const db = require('../config/db');
 
 // @route   POST api/auth/register
 // @desc    Register user

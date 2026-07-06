@@ -1,33 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import {
-  TrendingUp,
-  TrendingDown,
-  Wallet,
-  PiggyBank,
-  Lightbulb,
-  AlertTriangle,
-  Plus,
-  ArrowRight
-} from 'lucide-react';
+import { Plus, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { api } from '../services/api';
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend
-} from 'recharts';
-import TransactionTable from '../components/TransactionTable';
-import TransactionModal from '../components/TransactionModal';
+import dashboardService from '../services/dashboardService';
+import transactionService from '../services/transactionService';
+import TransactionTable from '../components/transactions/TransactionTable';
+import TransactionModal from '../components/transactions/TransactionModal';
+import SummaryCards from '../components/dashboard/SummaryCards';
+import ExpenseTrendChart from '../components/dashboard/ExpenseTrendChart';
+import SpendingAverages from '../components/dashboard/SpendingAverages';
 
 const CATEGORY_COLORS = {
   Food: '#f43f5e',
@@ -59,10 +39,10 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const summaryData = await api.dashboard.getSummary();
-      const chartsData = await api.dashboard.getCharts();
-      const insightsData = await api.dashboard.getInsights();
-      const txData = await api.transactions.getAll({ page: 1, limit: 5 });
+      const summaryData = await dashboardService.getSummary();
+      const chartsData = await dashboardService.getCharts();
+      const insightsData = await dashboardService.getInsights();
+      const txData = await transactionService.getAll({ page: 1, limit: 5 });
 
       setSummary(summaryData);
       setCharts(chartsData);
@@ -101,10 +81,6 @@ export default function Dashboard() {
     setIsModalOpen(true);
   };
 
-  console.log("Summary:", summary);
-  console.log("Balance:", summary?.totals?.balance);
-  console.log("Transaction:", data);
-
   const handleSaveTransaction = async (data) => {
     // Prevent expense from making balance negative
     if (
@@ -118,9 +94,9 @@ export default function Dashboard() {
 
     try {
       if (editingTransaction) {
-        await api.transactions.update(editingTransaction.id, data);
+        await transactionService.update(editingTransaction.id, data);
       } else {
-        await api.transactions.add(data);
+        await transactionService.add(data);
       }
 
       setIsModalOpen(false);
@@ -133,7 +109,7 @@ export default function Dashboard() {
   const handleDeleteTransaction = async (id) => {
     console.log('handleDeleteTransaction invoked in Dashboard page, ID:', id);
     try {
-      await api.transactions.delete(id);
+      await transactionService.delete(id);
       loadDashboardData();
     } catch (err) {
       console.error('Error deleting transaction:', err);
@@ -153,7 +129,7 @@ export default function Dashboard() {
   }
 
   // Formatting chart tooltips
-  const formatCurrency = (val) => `$₹{parseFloat(val).toFixed(2)}`;
+  const formatCurrency = (val) => `₹${parseFloat(val).toFixed(2)}`;
 
   return (
     <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -177,109 +153,15 @@ export default function Dashboard() {
       )}
 
       {/* Summary Cards Grid */}
-      {summary && (
-        <div className="dashboard-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
-          {/* Card 1: Balance */}
-          <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Current Balance</span>
-              <div style={{ padding: '8px', borderRadius: '50%', backgroundColor: 'var(--primary-light)', color: 'var(--primary)' }}>
-                <Wallet size={20} />
-              </div>
-            </div>
-            <h2 style={{ fontSize: '2rem', fontWeight: 800 }}>${summary.totals.balance.toFixed(2)}</h2>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Net worth across categories</span>
-          </div>
-
-          {/* Card 2: Expenses */}
-          <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Total Expenses</span>
-              <div style={{ padding: '8px', borderRadius: '50%', backgroundColor: 'var(--danger-light)', color: 'var(--danger)' }}>
-                <TrendingDown size={20} />
-              </div>
-            </div>
-            <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--danger)' }}>${summary.totals.totalExpense.toFixed(2)}</h2>
-            <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>
-              Current Month: -${summary.currentMonth.expense.toFixed(2)}
-            </span>
-          </div>
-
-          {/* Card 3: Savings */}
-          <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Total Savings</span>
-              <div style={{ padding: '8px', borderRadius: '50%', backgroundColor: 'var(--info-light)', color: 'var(--info)' }}>
-                <PiggyBank size={20} />
-              </div>
-            </div>
-            <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--info)' }}>${summary.totals.savings.toFixed(2)}</h2>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Accumulated net cash reserves</span>
-          </div>
-        </div>
-      )}
+      <SummaryCards summary={summary} />
 
       {/* Insights and Charts Grid */}
       <div className="analytics-grid">
         {/* Left Side: Spending Trend Line Graph */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {charts && charts.monthlySpendingLine.length > 0 && (
-            <div className="glass-panel" style={{ padding: '24px' }}>
-              <h3 style={{ marginBottom: '20px' }}>Monthly Expense Trend</h3>
-              <div style={{ width: '100%', height: '320px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={charts.monthlySpendingLine}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                    <XAxis dataKey="month" stroke="var(--text-secondary)" />
-                    <YAxis stroke="var(--text-secondary)" tickFormatter={formatCurrency} />
-                    <Tooltip
-                      formatter={formatCurrency}
-                      contentStyle={{
-                        backgroundColor: 'var(--bg-surface)',
-                        borderColor: 'var(--border-color)',
-                        borderRadius: '8px',
-                        color: 'var(--text-primary)'
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="amount"
-                      name="Expenses"
-                      stroke="var(--primary)"
-                      strokeWidth={3}
-                      activeDot={{ r: 8 }}
-                      dot={{ strokeWidth: 2, r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-        </div>
+        <ExpenseTrendChart charts={charts} formatCurrency={formatCurrency} />
 
         {/* Right Side: Averages spending */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {charts && charts.averages && (
-            <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', justifyContent: 'center' }}>
-              <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', margin: 0 }}>Spending Averages</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Daily Average</span>
-                  <strong style={{ fontSize: '1.2rem' }}>${charts.averages.daily.toFixed(2)}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Weekly Average</span>
-                  <strong style={{ fontSize: '1.2rem' }}>${charts.averages.weekly.toFixed(2)}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Monthly Average</span>
-                  <strong style={{ fontSize: '1.2rem' }}>${charts.averages.monthly.toFixed(2)}</strong>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <SpendingAverages charts={charts} />
       </div>
 
       {/* Recent Transactions list table */}

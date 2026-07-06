@@ -138,7 +138,7 @@ export default function TransactionTable({
                       </span>
                     </td>
                     <td style={{ textAlign: 'right', fontWeight: 700, color: t.type === 'expense' ? 'var(--danger)' : 'var(--success)' }}>
-                      {t.type === 'expense' ? '-' : '+'}${parseFloat(t.amount).toFixed(2)}
+                      {t.type === 'expense' ? '-' : '+'}₹{parseFloat(t.amount).toFixed(2)}
                     </td>
                     <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={t.notes}>
                       {t.notes || '-'}

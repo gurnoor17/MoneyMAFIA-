@@ -1,13 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const errorMiddleware = require('./middleware/errorMiddleware');
 
 // Initialize app
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: '*', // Allow all origins during dev, can be configured for production
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -26,11 +27,12 @@ app.get('/api/health', (req, res) => {
 });
 
 // Routes Wireup
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/transactions', require('./routes/transactions'));
-app.use('/api/budgets', require('./routes/budgets'));
-app.use('/api/dashboard', require('./routes/dashboard'));
-app.use('/api/profile', require('./routes/profile'));
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/transactions', require('./routes/transactionRoutes'));
+app.use('/api/budgets', require('./routes/budgetRoutes'));
+app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/profile', require('./routes/profileRoutes'));
+app.use('/api/loans', require('./routes/loanRoutes'));
 
 // 404 Route handler
 app.use((req, res, next) => {
@@ -38,12 +40,6 @@ app.use((req, res, next) => {
 });
 
 // Global Error Handler
-app.use((err, req, res, next) => {
-  console.error('Unhandled server error:', err.stack);
-  res.status(500).json({ 
-    message: 'Something went wrong on the server',
-    error: process.env.NODE_ENV === 'development' ? err.message : {}
-  });
-});
+app.use(errorMiddleware);
 
 module.exports = app;
